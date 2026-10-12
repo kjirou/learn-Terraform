@@ -1,0 +1,33 @@
+# Terraform のローカル作業ディレクトリ（プロバイダのバイナリなど）
+.terraform/
+
+# state ファイル（実リソースの情報やシークレットを含み得るため commit しない）
+*.tfstate
+*.tfstate.*
+
+# クラッシュログ
+crash.log
+crash.*.log
+
+# 変数ファイル（シークレットを含み得る）。サンプルは *.tfvars.example として置く
+*.tfvars
+*.tfvars.json
+
+# ローカル専用の上書き設定
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# plan の出力ファイル
+*.tfplan
+
+# CLI 設定
+.terraformrc
+terraform.rc
+
+# 演習で生成されるファイル
+exercises/*/output/
+
+# macOS
+.DS_Store
