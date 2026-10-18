@@ -10,7 +10,7 @@
   - 読み込む .tf ファイル
     - カレントディレクトリ直下の *.tf すべて（サブディレクトリは読まない）
     - サブディレクトリのコードを使いたいときは、module ブロックで明示的に呼び出す
-  - state ファイルは、 ./terraform.tfstate へ読み書きする
+  - state ファイルは、例えば、ローカル backend の場合は、 ./terraform.tfstate へ読み書きする。S3 などに配置されることもある。
   - プロバイダ置き場は、 ./.terraform/ 、 init で作られる
   - ロックファイルは、 ./.terraform.lock.hcl
   -  自動で読み込む変数ファイルは、 ./terraform.tfvars、./*.auto.tfvars
@@ -35,12 +35,12 @@
   - 例外として override.tf と *_override.tf がある
     - これらは通常のファイルの後に適用されて、定義を上書きする。順序に意味がある、数少ない特殊なファイル。
 
-## HCL と .tf の役割の違い
+## HCL と Terraform の役割の違い
 
 - 役割の違い
-  - HCL = 構文とパーサー、ブロックの順序の解釈と保持はこれが行う。
-  - Terraform = 「全 .tf を合体」「トップレベルの順序を無視」「依存グラフで実行順を決める」などの決め
-    - 例外として、provisioner やリスト型のネストブロックは書いた順序に意味があ
+  - HCL = 構文とパーサー、ブロックの順序の解析と保持はこれが行う
+  - Terraform = 「全 .tf を合体」「トップレベルの順序を無視」「依存グラフで実行順を決める」などを決めている
+    - 例外として、provisioner やリスト型のネストブロックは書いた順序に意味がある
 - HCL を使った他ツールも存在する
   - Packer や Nomad など
 
@@ -83,7 +83,8 @@
 - A) refresh
   - state と実物の比較を行う。state に記録されたリソースを、プロバイダが1つずつ確認しに行く。
     - 出力の "Refreshing state..." の行
-    - state に載っているものだけが対象、state にない実物は、確認すらされない
+    - state に載っているものだけが対象、state にない実物は確認すらされない
+      - なお、resource の場合の挙動。data ソースの場合は別。
   - 実物が変わっていたら、Terraform の state の認識をメモリ内で更新する
     - この作用だけを記録したいなら `terraform apply -refresh-only`
 - B) diff
@@ -96,21 +97,21 @@
 - Core の仕事: state の管理、依存グラフの作成、差分計算、実行順の制御
 - プロバイダ の仕事: 実物との通信。ファイルを読む、Docker API を呼ぶ、AWS API を呼ぶ、など
   - リソースごとに Create / Read / Update / Delete を実装している
-  - 実物がない場合は state の値のみを参照して結果を返す
+  - 外部に実体を持たないリソース（random_pet など）の場合は、state の値のみを参照して結果を返す
 
 ### よくあるパターンの例
 
 - コード = state = 実物
   - No changes. が表示される
 - コード ≠ state
-  - \-/\+ で作り直し
-  - 変数を更新した状況など
+  - コードに追加したら \+、コードから消したら \-、その場で変更できる属性なら ~、変更できない属性（forces replacement）なら \-/\+
+  - 例: 変数を更新した状況など
 - state ≠ 実物
-  - \+ create
-  - refresh で検知 → 「存在しない」とみなされた
+  - どうなるかは、プロバイダの Read の実装次第
+    - 多くのリソースでは、ドリフトがあると ~（変わった属性を戻す更新）になる。実物が削除されていた場合は \+ create になる。
 - state が空
   - 全部 \+ create、refresh なし
-  - state が空なの → 実物があっても見えない
+  - state が空だと、実物があっても見えない
 
 ## path.module, path.root, path.cwd
 
@@ -118,4 +119,4 @@
 - path.module
   - この .tf ファイルがあるディレクトリ
 - path.root
-- path.cmd
+- path.cwd
