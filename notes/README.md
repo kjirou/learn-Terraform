@@ -61,7 +61,7 @@
 
 ## Terraform が状態を把握する仕組み: コード・state・実物
 
-###  Terraform は、3つのものを照らし合わせて状態を把握する
+###  Terraform は、 3 つのものを照らし合わせて状態を把握する
 
 - 3つの登場人物
   - コード（.tf）
@@ -76,6 +76,41 @@
 - state の役割
   - 最も重要な役割は、コード上のアドレス（local_file.hello）と実物（ID 2286ae... のファイル）を結び付けること
   - Terraform は、この対応表を通してしか実物を認識できない
+    - state にない実物を管理下に入れるには、terraform import を使う
+
+### plan の 2 段階の振る舞い
+
+- A) refresh
+  - state と実物の比較を行う。state に記録されたリソースを、プロバイダが1つずつ確認しに行く。
+    - 出力の "Refreshing state..." の行
+    - state に載っているものだけが対象、state にない実物は、確認すらされない
+  - 実物が変わっていたら、Terraform の state の認識をメモリ内で更新する
+    - この作用だけを記録したいなら `terraform apply -refresh-only`
+- B) diff
+  - コードと refresh で更新後の state の比較を行う
+  - 差分を、作成 / 更新 / 作り直し / 削除 のアクションにする
+
+### Core とプロバイダの役割
+
+- Core（terraform コマンド本体） <-> プロバイダ <-> 実物、の間で接触する
+- Core の仕事: state の管理、依存グラフの作成、差分計算、実行順の制御
+- プロバイダ の仕事: 実物との通信。ファイルを読む、Docker API を呼ぶ、AWS API を呼ぶ、など
+  - リソースごとに Create / Read / Update / Delete を実装している
+  - 実物がない場合は state の値のみを参照して結果を返す
+
+### よくあるパターンの例
+
+- コード = state = 実物
+  - No changes. が表示される
+- コード ≠ state
+  - \-/\+ で作り直し
+  - 変数を更新した状況など
+- state ≠ 実物
+  - \+ create
+  - refresh で検知 → 「存在しない」とみなされた
+- state が空
+  - 全部 \+ create、refresh なし
+  - state が空なの → 実物があっても見えない
 
 ## path.module, path.root, path.cwd
 
