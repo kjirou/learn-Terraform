@@ -20,14 +20,6 @@
   - 指定したディレクトリに cd したのと同じ扱いになる
   - 例: `terraform -chdir=exercises/01-local-basics plan`
 
-## path.module, path.root, path.cmd
-
-- .tf の中で `"${path.module}/output/hello.txt"` のように使うパスの変数
-- path.module
-  - この .tf ファイルがあるディレクトリ
-- path.root
-- path.cmd
-
 ## .tf やコードに読み込み順序はない
 
 - 要点: 順序が意味を持たない2つのレベル
@@ -42,3 +34,53 @@
   - 同じアドレスを2回定義するとエラーになる
   - 例外として override.tf と *_override.tf がある
     - これらは通常のファイルの後に適用されて、定義を上書きする。順序に意味がある、数少ない特殊なファイル。
+
+## HCL と .tf の役割の違い
+
+- 役割の違い
+  - HCL = 構文とパーサー、ブロックの順序の解釈と保持はこれが行う。
+  - Terraform = 「全 .tf を合体」「トップレベルの順序を無視」「依存グラフで実行順を決める」などの決め
+    - 例外として、provisioner やリスト型のネストブロックは書いた順序に意味があ
+- HCL を使った他ツールも存在する
+  - Packer や Nomad など
+
+## 用語
+
+- configuration file
+  - = .tf
+  - Ref) https://developer.hashicorp.com/terraform/language/files#file-extension
+    - > Files containing Terraform code are often called configuration files.
+- HashiCorp Configuration Language
+  - = HCL
+- module（モジュール）
+  - 1つのディレクトリにある .tf ファイルのまとまり
+- root module（ルートモジュール）
+  - terraform コマンドを実行するディレクトリのモジュール
+- Terraform language
+  - .tf を書く言語、HCL の構文をベースにしている
+
+## Terraform が状態を把握する仕組み: コード・state・実物
+
+###  Terraform は、3つのものを照らし合わせて状態を把握する
+
+- 3つの登場人物
+  - コード（.tf）
+    - あるべき姿、「こうあってほしい」という宣言
+    - 例: random_pet を length = 2 で
+  - state（terraform.tfstate）
+    - 「自分はこれを作って管理している」という Terraform の記憶
+    - 例: random_pet.name = accepted-narwhal、local_file.hello = ID 2286ae...
+  - 実物
+    - 実際に存在しているもの
+    - ディスク上の hello.txt
+- state の役割
+  - 最も重要な役割は、コード上のアドレス（local_file.hello）と実物（ID 2286ae... のファイル）を結び付けること
+  - Terraform は、この対応表を通してしか実物を認識できない
+
+## path.module, path.root, path.cwd
+
+- .tf の中で `"${path.module}/output/hello.txt"` のように使うパスの変数
+- path.module
+  - この .tf ファイルがあるディレクトリ
+- path.root
+- path.cmd
