@@ -13,10 +13,10 @@
   - state ファイルは、例えば、ローカル backend の場合は、 ./terraform.tfstate へ読み書きする。S3 などに配置されることもある。
   - プロバイダ置き場は、 ./.terraform/ 、 init で作られる
   - ロックファイルは、 ./.terraform.lock.hcl
-  -  自動で読み込む変数ファイルは、 ./terraform.tfvars、./*.auto.tfvars
+  - 自動で読み込む変数ファイルは、 ./terraform.tfvars、./*.auto.tfvars
   - 相対パスの基準
     - `-var-file=dev.tfvars` などは、カレントディレクトリから探す
--  cd せずに実行する: -chdir
+- cd せずに実行する: -chdir
   - 指定したディレクトリに cd したのと同じ扱いになる
   - 例: `terraform -chdir=exercises/01-local-basics plan`
 
@@ -61,7 +61,7 @@
 
 ## Terraform が状態を把握する仕組み: コード・state・実物
 
-###  Terraform は、 3 つのものを照らし合わせて状態を把握する
+### Terraform は、 3 つのものを照らし合わせて状態を把握する
 
 - 3つの登場人物
   - コード（.tf）
@@ -153,14 +153,14 @@
 
 ### output が使われる 3 つのパターン
 
-- 1) 子モジュールの output → 親モジュールで使う（最も一般的。演習 04）
+- 1. 子モジュールの output → 親モジュールで使う（最も一般的。演習 04）
   - `module.<名前>.<output名>` で参照する
   - あるモジュールの output を、別のモジュールの variable に渡す、というようにつないでいく
     - 出す側にとっては出口、受け取る側にとっては入口
-- 2) 別の構成（別の state）の output を読む
+- 2. 別の構成（別の state）の output を読む
   - `data "terraform_remote_state"` で相手の state の outputs を読む
   - 例: ネットワーク、DB、アプリのように構成と state を分けたとき、構成をまたいで値を受け渡す
-- 3) Terraform 以外のツールが読む
+- 3. Terraform 以外のツールが読む
   - `terraform output`。CI のスクリプトなどに IP アドレスなどを渡す
   - 例: `open "$(terraform output -raw url)"`
 
