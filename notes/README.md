@@ -213,3 +213,53 @@
 - A) refresh で before が決まる（プロバイダの Read）
 - B) diff で after が決まる（プロバイダが .tf をもとに予定値を計算する）
   - B にもプロバイダが関わっている。Core がプロバイダに「この設定だと結果はどうなる？」と問い合わせる
+
+## terraform graph
+
+- 依存グラフを DOT 言語（グラフ描画ツール Graphviz の形式）で出力する
+- 上手く使うと .tf の読解に役立つ。特に、他人が書いた構成や大きな構成を読むとき
+  - リソース同士の関係を俯瞰できる。何がどれを参照しているかを、.tf を全部読まなくても把握できる
+  - 作成・削除の順序を予想できる
+  - 循環参照（`Cycle` エラー）がどこでループしているかを探す手がかりになる
+  - ただし、リソースが数十個を超えるとグラフが巨大になり、かえって読みにくい。関心のある部分を確認する補助ツールとして使う
+
+### 出力の読み方
+
+- 02 の出力例
+
+```dot
+digraph G {
+  rankdir = "RL";
+  node [shape = rect, fontname = "sans-serif"];
+  "docker_container.nginx" [label="docker_container.nginx"];
+  "docker_image.nginx" [label="docker_image.nginx"];
+  "docker_container.nginx" -> "docker_image.nginx";
+}
+```
+
+- `digraph G { ... }`: 有向グラフ（矢印に向きがあるグラフ）。G はグラフの名前
+- `rankdir = "RL"`: 描画の向き。右から左へ並べる
+- `node [...]`: ノード（箱）の見た目の設定
+- `"docker_container.nginx" [label=...]`: ノードの定義
+- `"docker_container.nginx" -> "docker_image.nginx"`: 矢印。本質的な情報はこの行だけ
+
+### 矢印の向き
+
+- `A -> B` は「A は B に依存している」という意味。作成の順序とは逆向きなので注意
+  - 作成: 矢印の先（B）を先に作る
+  - 削除: 矢印の元（A）を先に消す
+- 02 の場合、`docker_container` の `image = docker_image.nginx.image_id` という参照（暗黙の依存関係）がこの矢印になっている
+
+### -type=plan で詳細を見る
+
+- デフォルトの `terraform graph` は、リソース同士の関係だけに絞った簡略版
+- `terraform graph -type=plan` で、Terraform が内部で使っているグラフが見られる
+  - 変数への依存: `docker_container.nginx -> var.external_port`
+  - プロバイダへの依存: `docker_image.nginx -> provider["...kreuzwerker/docker"]`
+  - output の依存: `output.url -> var.external_port`
+    - url はコンテナではなく変数だけに依存している。「output は実物ではなく計算結果」の裏付け
+
+### 画像にする
+
+- Graphviz が必要: `brew install graphviz`
+- `terraform graph | dot -Tpng > graph.png && open graph.png`
