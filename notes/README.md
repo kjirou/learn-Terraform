@@ -120,3 +120,62 @@
   - この .tf ファイルがあるディレクトリ
 - path.root
 - path.cwd
+
+## output の性質と使われ方
+
+### output は「実物」ではない
+
+- state の outputs には、対応する実物がない
+  - resources は実物と対応しているが、outputs は state の中だけに存在する値
+- 値の出どころは、コードの式を評価した結果。それを後で取り出せるように state にメモしておいたもの
+  - 計算するのは Terraform Core。プロバイダは関わらず、refresh の対象でもない
+  - `Changes to Outputs` は「今のコードで計算し直した値」と「state にメモしてある値」の差分
+- 「実物の状態」ではなく「計算結果」である例
+  - 02 の `url` は `"http://localhost:${var.external_port}"`。変数から組み立てた文字列で、実際のコンテナのポートを読んでいるわけではない
+  - 実物の値を反映させたいなら、リソースの属性を参照する
+    - 例: `"http://localhost:${docker_container.nginx.ports[0].external}"`
+- random_pet との違い
+  - random_pet も外部に実体はないが、プロバイダが管理するリソースなので resources 側に入る。output はそもそもリソースではない
+
+### 値を扱う 3 種類のブロック
+
+- variable
+  - 外 → 中。入力。外から値を受け取る
+  - 参照: `var.pet_length`
+- locals
+  - 中だけ。内部変数。計算結果に名前を付けて使い回す
+  - 参照: `local.greeting`
+- output
+  - 中 → 外。出力。外の世界に値を公開する
+  - 同じルートモジュールの中からは参照できない（`output.xxx` という書き方は存在しない）
+    - 同じ構成の中で使い回したいなら、元の値（リソースの属性、local、var）を直接参照する
+- 関数に例えると、variable = 引数、locals = ローカル変数、output = 戻り値
+
+### output が使われる 3 つのパターン
+
+- 1) 子モジュールの output → 親モジュールで使う（最も一般的。演習 04）
+  - `module.<名前>.<output名>` で参照する
+  - あるモジュールの output を、別のモジュールの variable に渡す、というようにつないでいく
+    - 出す側にとっては出口、受け取る側にとっては入口
+- 2) 別の構成（別の state）の output を読む
+  - `data "terraform_remote_state"` で相手の state の outputs を読む
+  - 例: ネットワーク、DB、アプリのように構成と state を分けたとき、構成をまたいで値を受け渡す
+- 3) Terraform 以外のツールが読む
+  - `terraform output`。CI のスクリプトなどに IP アドレスなどを渡す
+  - 例: `open "$(terraform output -raw url)"`
+
+### terraform output コマンド
+
+- state に保存された output の値を表示する。state を読むだけで、plan も refresh もしない
+  - まだ apply していない output は表示されない
+- `terraform output`: すべて
+- `terraform output url`: 1 つだけ（引用符付き）
+- `terraform output -raw url`: 1 つだけ（引用符なし、末尾の改行もなし）。シェルで使うとき向け
+  - 使えるのは文字列・数値・真偽値だけ。リストやオブジェクトは `-json` を使う
+- `terraform output -json`: すべてを JSON で
+
+### sensitive
+
+- output は公開前提の値なので、apply の出力や `terraform output` で誰にでも見える
+- `sensitive = true` を付けると、画面上では `(sensitive value)` と伏せられる
+- ただし state ファイルの中には平文で記録される。伏せられるのは画面表示だけ
