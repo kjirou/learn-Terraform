@@ -5,10 +5,10 @@ Terraform をローカル環境だけで学ぶための個人学習リポジト�
 
 ## 前提
 
-| ツール | 用途 | 確認コマンド |
-| --- | --- | --- |
-| Terraform 1.16+ | 本体 | `terraform -version` |
-| Docker Desktop | `02-` 以降の演習 | `docker version` |
+| ツール          | 用途             | 確認コマンド         |
+| --------------- | ---------------- | -------------------- |
+| Terraform 1.16+ | 本体             | `terraform -version` |
+| Docker Desktop  | `02-` 以降の演習 | `docker version`     |
 
 Terraform は Homebrew 本体ではなく HashiCorp の tap から入れる（本体の formula は BSL 化前の 1.5.x で止まっているため）。
 

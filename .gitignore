@@ -29,5 +29,8 @@ terraform.rc
 # 演習で生成されるファイル
 exercises/*/output/
 
+# Node.js
+node_modules/
+
 # macOS
 .DS_Store
