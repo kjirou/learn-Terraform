@@ -23,7 +23,8 @@ brew install hashicorp/tap/terraform
 .
 ├── exercises/              # 演習。1 ディレクトリ = 1 つの独立した Terraform ルートモジュール
 │   ├── 01-local-basics/    # local / random プロバイダで基本操作と state を学ぶ（Docker 不要）
-│   └── 02-docker-nginx/    # Docker プロバイダで nginx コンテナを立てる（公式 Get Started 相当）
+│   ├── 02-docker-nginx/    # Docker プロバイダで nginx コンテナを立てる（公式 Get Started 相当）
+│   └── 03-count-for-each-lifecycle/  # count / for_each で複数のコンテナを作り、lifecycle を試す
 └── notes/                  # 学習メモ
 ```
 
@@ -46,7 +47,7 @@ terraform destroy   # 片付ける
 
 - [x] `01-local-basics`: init / plan / apply / destroy、variable / output / locals、依存関係、state
 - [x] `02-docker-nginx`: Docker コンテナの作成・変更、ドリフト検知
-- [ ] `03-`: `count` / `for_each`、`lifecycle`
+- [x] `03-count-for-each-lifecycle`: `count` / `for_each`、`lifecycle`
 - [ ] `04-`: モジュール化
 - [ ] `05-`: `terraform import` と state 操作（`state list` / `state mv` / `state rm`）
 - [ ] `06-`: LocalStack で AWS を疑似体験（S3 / DynamoDB、リモート state backend）
